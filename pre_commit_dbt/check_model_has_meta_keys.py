@@ -21,12 +21,16 @@ def validate_keys(
 ) -> bool:
     actual = set(actual)
     expected = set(expected)
-
     if allow_extra_keys:
         return expected.issubset(actual)
     else:
         return expected == actual
 
+def logger (node):
+    print ("id: ", node.get("unique_id"))
+    print ("resource_type: ", node.get("resource_type"))
+    print ("meta: ", node.get("meta"))
+    return True
 
 def has_meta_key(
     paths: Sequence[str],
@@ -35,30 +39,23 @@ def has_meta_key(
     allow_extra_keys: bool,
 ) -> int:
     paths = get_missing_file_paths(paths, manifest)
-
     status_code = 0
-    ymls = get_filenames(paths, [".yml", ".yaml"])
     sqls = get_model_sqls(paths, manifest)
-    filenames = set(sqls.keys())
+    filenames = {
+        key 
+        for key,value in sqls.items()
+        #exclude models in test directory
+        if str(value).split("/")[0] != "tests"
+    }
     # get manifest nodes that pre-commit found as changed
     models = get_models(manifest, filenames)
-    # if user added schema but did not rerun the model
-    schemas = get_model_schemas(list(ymls.values()), filenames)
-    # convert to sets
+    # convert to set
     in_models = {
         model.filename
         for model in models
         if validate_keys(model.node.get("meta", {}).keys(), meta_keys, allow_extra_keys)
     }
-    in_schemas = {
-        schema.model_name
-        for schema in schemas
-        if validate_keys(
-            schema.schema.get("meta", {}).keys(), meta_keys, allow_extra_keys
-        )
-    }
-    missing = filenames.difference(in_models, in_schemas)
-
+    missing = filenames.difference(in_models)
     for model in missing:
         status_code = 1
         result = "\n- ".join(list(meta_keys))  # pragma: no mutate

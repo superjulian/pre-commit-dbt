@@ -13,7 +13,6 @@ from typing import Sequence
 from typing import Set
 from typing import Text
 from typing import Union
-
 import yaml
 
 
@@ -139,7 +138,10 @@ def get_models(
         ):
             continue
         split_key = key.split(".")
-        filename = split_key[-1]
+        if split_key[0] != node.get("resource_type", ""):
+            print( f'error: {key} has resource_type: {node.get("resource_type", "")}')
+        # filename = ".".join(split_key[2:])
+        filename = node.get("name", "")
         if filename in filenames and split_key[0] == "model":
             yield Model(key, node.get("name"), filename, node)  # pragma: no mutate
 
