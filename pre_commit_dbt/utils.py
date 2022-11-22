@@ -3,7 +3,7 @@ import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -121,6 +121,8 @@ def get_json(json_filename: str) -> Dict[str, Any]:
     except Exception as e:
         raise JsonOpenError(e)
 
+def get_filename_resourcetype(node: Dict[str, any]) -> Tuple[str, str]:
+    return (node.get("name", ""), node.get("resource_type", ""))
 
 def get_models(
     manifest: Dict[str, Any],
@@ -137,12 +139,9 @@ def get_models(
             and node.get("config", {}).get("materialized") == "ephemeral"
         ):
             continue
-        split_key = key.split(".")
-        if split_key[0] != node.get("resource_type", ""):
-            print( f'error: {key} has resource_type: {node.get("resource_type", "")}')
-        # filename = ".".join(split_key[2:])
-        filename = node.get("name", "")
-        if filename in filenames and split_key[0] == "model":
+        filename, resource_type = get_filename_resourcetype(node)
+
+        if filename in filenames and resource_type == "model":
             yield Model(key, node.get("name"), filename, node)  # pragma: no mutate
 
 
@@ -154,9 +153,8 @@ def get_ephemeral(
     for key, node in nodes.items():  # pragma: no cover
         if not node.get("config", {}).get("materialized") == "ephemeral":
             continue
-        split_key = key.split(".")
-        filename = split_key[-1]
-        if split_key[0] == "model":
+        filename, resource_type = get_filename_resourcetype(node)
+        if resource_type == "model":
             output.append(filename)
     return output
 
@@ -167,9 +165,8 @@ def get_macros(
 ) -> Generator[Macro, None, None]:
     macros = manifest.get("macros", {})
     for key, macro in macros.items():
-        split_key = key.split(".")
-        filename = split_key[-1]
-        if filename in filenames and split_key[0] == "macro":
+        filename, resource_type = get_filename_resourcetype(macro)
+        if filename in filenames and resource_type == "macro":
             yield Macro(key, macro.get("name"), filename, macro)  # pragma: no mutate
 
 
