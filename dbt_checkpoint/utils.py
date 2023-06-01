@@ -152,7 +152,8 @@ def get_models(
             and node.get("config", {}).get("materialized") == "ephemeral"
         ):
             continue
-        filename = node.get("name", "")
+        path = node.get("original_file_path", "")
+        filename = Path(path).stem
         resource_type = node.get("resource_type", "")
         if filename in filenames and resource_type == "model":
             yield Model(key, node.get("name"), filename, node)  # pragma: no mutate
@@ -166,7 +167,8 @@ def get_ephemeral(
     for key, node in nodes.items():  # pragma: no cover
         if not node.get("config", {}).get("materialized") == "ephemeral":
             continue
-        filename = node.get("name", "")
+        path = node.get("original_file_path", "")
+        filename = Path(path).stem
         resource_type = node.get("resource_type", "")
         if resource_type == "model":
             output.append(filename)
@@ -179,7 +181,8 @@ def get_macros(
 ) -> Generator[Macro, None, None]:
     macros = manifest.get("macros", {})
     for key, macro in macros.items():
-        filename = node.get("name", "")
+        path = node.get("original_file_path", "")
+        filename = Path(path).stem
         resource_type = node.get("resource_type", "")
         if filename in filenames and resource_type == "macro":
             yield Macro(key, macro.get("name"), filename, macro)  # pragma: no mutate
