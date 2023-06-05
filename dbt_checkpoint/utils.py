@@ -175,6 +175,19 @@ def get_ephemeral(
     return output
 
 
+def get_tests(
+    manifest: Dict[str, Any],
+) -> List[str]:
+    output = []
+    nodes = manifest.get("nodes", {})
+    for key, node in nodes.items():  # pragma: no cover
+        path = node.get("original_file_path", "")
+        filename = Path(path).stem
+        resource_type = node.get("resource_type", "")
+        if resource_type == "test":
+            output.append(filename)
+    return output
+
 def get_macros(
     manifest: Dict[str, Any],
     filenames: Set[str],
@@ -204,9 +217,10 @@ def get_macro_sqls(paths: Sequence[str], manifest: Dict[str, Any]) -> Dict[str, 
 
 def get_model_sqls(paths: Sequence[str], manifest: Dict[str, Any]) -> Dict[str, Any]:
     ephemeral = get_ephemeral(manifest)
+    tests = get_tests(manifest)
     sqls = get_filenames(paths, [".sql"])
     macro_sqls = get_macro_sqls(paths, manifest)
-    return {k: v for k, v in sqls.items() if k not in macro_sqls and k not in ephemeral}
+    return {k: v for k, v in sqls.items() if k not in macro_sqls and k not in ephemeral and k not in tests}
 
 
 def get_model_schemas(
